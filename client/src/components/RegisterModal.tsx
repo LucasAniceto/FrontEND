@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { User, Mail, Lock, FileText, Phone, Eye, EyeOff } from "lucide-react"
+import { User, Mail, Lock, FileText, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface RegisterModalProps {
@@ -22,7 +22,6 @@ export function RegisterModal({ isOpen, onClose, onBackToLogin }: RegisterModalP
     name: "",
     email: "",
     cpf: "",
-    phone: "",
     password: "",
     confirmPassword: "",
   })
@@ -49,28 +48,11 @@ export function RegisterModal({ isOpen, onClose, onBackToLogin }: RegisterModalP
       .slice(0, 14)
   }
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, "")
-      .replace(/(\d{2})(\d)/, "($1) $2")
-      .replace(/(\d{5})(\d)/, "$1-$2")
-      .slice(0, 15)
-  }
-
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value)
     setFormData((prev) => ({
       ...prev,
       cpf: formatted,
-    }))
-    setError("")
-  }
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value)
-    setFormData((prev) => ({
-      ...prev,
-      phone: formatted,
     }))
     setError("")
   }
@@ -117,11 +99,6 @@ export function RegisterModal({ isOpen, onClose, onBackToLogin }: RegisterModalP
         return
       }
 
-      if (!formData.phone || formData.phone.replace(/\D/g, "").length < 10) {
-        setError("Por favor, insira um telefone válido")
-        return
-      }
-
       if (formData.password.length < 8) {
         setError("A senha deve ter no mínimo 8 caracteres")
         return
@@ -147,7 +124,6 @@ export function RegisterModal({ isOpen, onClose, onBackToLogin }: RegisterModalP
         formData.name,
         formData.email,
         formData.cpf,
-        formData.phone,
         formData.password
       )
 
@@ -156,7 +132,6 @@ export function RegisterModal({ isOpen, onClose, onBackToLogin }: RegisterModalP
         name: "",
         email: "",
         cpf: "",
-        phone: "",
         password: "",
         confirmPassword: "",
       })
@@ -232,26 +207,6 @@ export function RegisterModal({ isOpen, onClose, onBackToLogin }: RegisterModalP
                 placeholder="000.000.000-00"
                 value={formData.cpf}
                 onChange={handleCPFChange}
-                disabled={isLoading}
-                className="w-full pl-10 pr-4 py-2.5 dark:bg-gray-800 dark:border-gray-700 light:bg-white light:border-gray-300 rounded-md dark:text-white light:text-gray-900 dark:placeholder-gray-500 light:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#FFC107] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition"
-              />
-            </div>
-          </div>
-
-          {/* Campo de Telefone */}
-          <div className="space-y-2">
-            <label htmlFor="phone" className="block text-sm font-medium dark:text-gray-300 light:text-gray-700">
-              Telefone
-            </label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-              <input
-                id="phone"
-                type="tel"
-                name="phone"
-                placeholder="(00) 00000-0000"
-                value={formData.phone}
-                onChange={handlePhoneChange}
                 disabled={isLoading}
                 className="w-full pl-10 pr-4 py-2.5 dark:bg-gray-800 dark:border-gray-700 light:bg-white light:border-gray-300 rounded-md dark:text-white light:text-gray-900 dark:placeholder-gray-500 light:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#FFC107] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition"
               />

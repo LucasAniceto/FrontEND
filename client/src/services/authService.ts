@@ -10,7 +10,6 @@ export interface User {
   name: string
   email: string
   cpf?: string
-  phone?: string
   createdAt?: string
 }
 
@@ -28,7 +27,6 @@ export interface RegisterRequest {
   name: string
   email: string
   cpf: string
-  phone: string
   password: string
 }
 

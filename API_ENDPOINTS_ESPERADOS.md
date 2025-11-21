@@ -47,7 +47,6 @@ Registrar novo usuário.
   "name": "João Silva",
   "email": "joao@example.com",
   "cpf": "12345678910",
-  "phone": "11999999999",
   "password": "securePassword123"
 }
 ```
@@ -61,7 +60,6 @@ Registrar novo usuário.
     "name": "João Silva",
     "email": "joao@example.com",
     "cpf": "12345678910",
-    "phone": "11999999999",
     "createdAt": "2025-11-21T10:30:00Z"
   }
 }
