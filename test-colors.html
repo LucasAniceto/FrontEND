@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Cores Investic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'accent': '#FFC107',
+                        'primary': '#FFC107'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --accent: 45 93% 47%;
+            --accent-foreground: 0 0% 0%;
+            --primary: 45 93% 47%;
+            --primary-foreground: 0 0% 0%;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 p-8">
+    <h1 class="text-white text-3xl mb-6">Teste de Cores do Investic</h1>
+    
+    <!-- Test using direct yellow color -->
+    <div class="space-y-4">
+        <button class="bg-yellow-500 text-black px-6 py-3 rounded-lg font-semibold">
+            Amarelo Direto (bg-yellow-500)
+        </button>
+        
+        <button class="bg-[#FFC107] text-black px-6 py-3 rounded-lg font-semibold">
+            Amarelo HEX (#FFC107)
+        </button>
+        
+        <button class="bg-accent text-black px-6 py-3 rounded-lg font-semibold">
+            Amarelo Accent (bg-accent)
+        </button>
+        
+        <button class="bg-primary text-black px-6 py-3 rounded-lg font-semibold">
+            Amarelo Primary (bg-primary)
+        </button>
+    </div>
+    
+    <div class="mt-8">
+        <div class="w-10 h-10 bg-[#FFC107] rounded-lg flex items-center justify-center">
+            <span class="text-black font-bold text-lg">I</span>
+        </div>
+    </div>
+</body>
+</html>

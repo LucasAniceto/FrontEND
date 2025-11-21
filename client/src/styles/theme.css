@@ -1,0 +1,78 @@
+/* Theme variables for light and dark modes */
+
+:root[class="dark"] {
+  /* Dark mode colors */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #111827;
+  --bg-card: #1f2937;
+
+  --text-primary: #ffffff;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+
+  --border-color: #374151;
+  --border-light: #4b5563;
+
+  --accent-primary: #FFC107;
+  --accent-secondary: #FFB800;
+
+  --success-bg: #064e3b;
+  --success-text: #10b981;
+  --warning-bg: #78350f;
+  --warning-text: #f59e0b;
+  --danger-bg: #7f1d1d;
+  --danger-text: #ef4444;
+  --info-bg: #1e3a8a;
+  --info-text: #60a5fa;
+}
+
+:root[class="light"] {
+  /* Light mode colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e5e7eb;
+  --bg-card: #f9fafb;
+
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6b7280;
+
+  --border-color: #d1d5db;
+  --border-light: #e5e7eb;
+
+  --accent-primary: #FFC107;
+  --accent-secondary: #FFB800;
+
+  --success-bg: #dcfce7;
+  --success-text: #15803d;
+  --warning-bg: #fef08a;
+  --warning-text: #d97706;
+  --danger-bg: #fee2e2;
+  --danger-text: #dc2626;
+  --info-bg: #dbeafe;
+  --info-text: #0284c7;
+}
+
+/* Apply theme-aware styles globally */
+html.dark {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+html.light {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Ensure body also gets theme colors */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
