@@ -5,13 +5,14 @@ export interface User {
   id: string
   name: string
   email: string
+  cpf?: string
 }
 
 export interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (cpf: string, password: string) => Promise<void>
   register: (name: string, email: string, cpf: string, password: string) => Promise<void>
   logout: () => Promise<void>
 }
@@ -49,31 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     validateStoredToken()
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (cpf: string, password: string) => {
     setIsLoading(true)
     try {
-      // Credenciais de teste enquanto não integra com backend real
-      if (email === 'admin@investic.com' && password === 'admin123') {
-        const mockUser: User = {
-          id: '1',
-          name: 'Administrador',
-          email: 'admin@investic.com',
-        }
-        setUser(mockUser)
-        // Simular token armazenado
-        localStorage.setItem('authToken', 'mock-token-admin')
-        return
-      }
-
-      // Integração com API real (descomentar quando backend estiver pronto)
-      // const response = await authService.login({ email, password })
-      // setUser({
-      //   id: response.user.id,
-      //   name: response.user.name,
-      //   email: response.user.email,
-      // })
-
-      throw new Error('Credenciais inválidas')
+    const response = await authService.login({ cpf, password })
+    setUser(response.user)
+    } catch (err) {
+      console.error("Erro no login:", err)
+      throw err
     } finally {
       setIsLoading(false)
     }
@@ -82,30 +66,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (
     name: string,
     email: string,
-    _cpf: string,
+    cpf: string,
     _password: string
   ) => {
     setIsLoading(true)
     try {
       // Integração com API real (descomentar quando backend estiver pronto)
-      // const response = await authService.register({ name, email, cpf, phone, password })
-      // setUser({
-      //   id: response.user.id,
-      //   name: response.user.name,
-      //   email: response.user.email,
-      // })
+       const response = await authService.register({ name, email, cpf, password: _password})
+       setUser({
+         id: response.user.id,
+         name: response.user.name,
+         email: response.user.email,
+       })
 
-      // Simulação de registro
-      const mockUser: User = {
-        id: `user-${Date.now()}`,
-        name,
-        email,
-      }
-      setUser(mockUser)
-      localStorage.setItem('authToken', `mock-token-${Date.now()}`)
-    } finally {
-      setIsLoading(false)
-    }
+       } catch (err) {
+    console.error(err)
+    throw err
+  } finally {
+    setIsLoading(false)
+  }
   }, [])
 
   const logout = useCallback(async () => {

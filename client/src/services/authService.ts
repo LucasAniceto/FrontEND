@@ -9,12 +9,12 @@ export interface User {
   id: string
   name: string
   email: string
-  cpf?: string
+  cpf: string
   createdAt?: string
 }
 
 export interface LoginRequest {
-  email: string
+  cpf: string
   password: string
 }
 
@@ -71,12 +71,16 @@ const apiClient = {
 // Serviço de Autenticação
 export const authService = {
   /**
-   * Fazer login com email e senha
+   * Fazer login com cpf e senha
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
+    const cleanData = {
+      ...data,
+      cpf: data.cpf.replace(/\D+/g, '') 
+    };
     const response = await apiClient.fetch<LoginResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanData),
     })
 
     // Armazenar token automaticamente
@@ -114,7 +118,7 @@ export const authService = {
       throw new Error('Nenhum token disponível')
     }
 
-    return await apiClient.fetch<User>('/auth/validate', {
+    return await apiClient.fetch<User>('/auth/me', {
       method: 'GET',
     })
   },
