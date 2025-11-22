@@ -391,7 +391,7 @@ export default function Home() {
             </div>
           </div>
           <div className="dark:border-gray-800 light:border-gray-300 border-t pt-8 text-center text-sm">
-            <p>&copy; 2024 Investic. Todos os direitos reservados.</p>
+            <p>&copy; 2025 Investic. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

@@ -209,7 +209,7 @@ export default function Contact() {
             </div>
           </div>
           <div className="border-t border-gray-800 light:border-gray-200 pt-8 text-center text-sm">
-            <p>&copy; 2024 Investic. Todos os direitos reservados.</p>
+            <p>&copy; 2025 Investic. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
