@@ -54,7 +54,7 @@ export const investmentService = {
    * Obter lista de instituições conectadas
    */
   async getInstitutions(): Promise<Institution[]> {
-    return await apiClient.fetch<Institution[]>('/investments/institutions', {
+    return await apiClient.fetch<Institution[]>('/integration/institutions', {
       method: 'GET',
     })
   },
@@ -67,7 +67,7 @@ export const investmentService = {
     institutionId: string
     accessToken: string
   }): Promise<Institution> {
-    return await apiClient.fetch<Institution>('/investments/institutions/connect', {
+    return await apiClient.fetch<Institution>('/integration/institutions/connect', {
       method: 'POST',
       body: JSON.stringify(data),
     })
