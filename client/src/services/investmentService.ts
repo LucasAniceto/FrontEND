@@ -67,9 +67,9 @@ export const investmentService = {
     institutionId: string
     accessToken: string
   }): Promise<Institution> {
-    return await apiClient.fetch<Institution>('/integration/institutions/connect', {
+    return await apiClient.fetch<Institution>('/integration/connect', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ institutionId: Number(data.institutionId) }),
     })
   },
 
@@ -186,4 +186,14 @@ export const investmentService = {
 
     return await response.blob()
   },
+
+  /**
+   * Obter contas e saldos consolidados
+   */
+  async getDashboardAccounts(): Promise<any[]> {
+    return await apiClient.fetch<any[]>('/integration/dashboard/accounts', {
+      method: 'GET',
+    })
+  },
+
 }

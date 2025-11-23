@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -24,6 +24,9 @@ import { ProductComparison } from "@/components/ProductComparison"
 import { MigrationSimulator } from "@/components/MigrationSimulator"
 import { ReportsPanel } from "@/components/ReportsPanel"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { investmentService } from "@/services/investmentService"
+import type { Account } from "@/types/dashboard"
+import { ConnectBankModal } from "@/components/ConnectBankModal"
 
 // Dados mockados - substitua por chamada à API depois
 const MOCK_DASHBOARD_DATA: DashboardData = {
@@ -470,6 +473,37 @@ export default function Dashboard() {
   const [, setLocation] = useLocation()
   const [showValues, setShowValues] = useState(true)
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [totalBalance, setTotalBalance] = useState(0)
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false)
+
+
+  // Função reutilizável para buscar dados
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Chama o serviço
+      const accountsData = await investmentService.getDashboardAccounts()
+      
+      // Calcula o total
+      const total = accountsData.reduce((acc: number, curr: any) => acc + Number(curr.balance), 0)
+      
+      setAccounts(accountsData)
+      setTotalBalance(total)
+    } catch (error) {
+      console.error("Erro ao carregar dashboard:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchDashboardData()
+    }
+  }, [isAuthenticated])
 
   // Redirecionar se não estiver autenticado
   if (!isAuthenticated) {
@@ -492,6 +526,12 @@ export default function Dashboard() {
   }
 
   const data = MOCK_DASHBOARD_DATA
+
+  // Calcule o número de instituições ÚNICAS
+  const uniqueInstitutions = new Set(accounts.map((acc: any) => acc.institution)).size
+  
+  // Calcule o número total de contas
+  const totalAccounts = accounts.length
 
   const formatCurrency = (value: number) => {
     if (!showValues) return "•••••"
@@ -546,15 +586,16 @@ export default function Dashboard() {
           {/* Saldo Total */}
           <Card className="p-6 border-2 dark:border-gray-700 light:border-gray-300 dark:bg-gray-800 light:bg-gray-50">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Saldo Total</span>
-              <DollarSign className="w-5 h-5 text-[#FFC107]" />
+            <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Saldo Total</span>
+            <DollarSign className="w-5 h-5 text-[#FFC107]" />
             </div>
             <p className="text-3xl font-bold dark:text-white light:text-gray-900">
-              {formatCurrency(data.summary.totalCurrentValue)}
-            </p>
-            <p className="text-sm dark:text-gray-400 light:text-gray-600 mt-2">
-              Investido: {formatCurrency(data.summary.totalInvested)}
-            </p>
+            {isLoading ? (
+              <span className="text-base font-normal animate-pulse">Carregando...</span>
+            ) : (
+              formatCurrency(totalBalance)
+            )}
+          </p>
           </Card>
 
           {/* Lucro/Prejuízo */}
@@ -596,9 +637,12 @@ export default function Dashboard() {
               <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Instituições</span>
               <Building2 className="w-5 h-5 text-blue-400" />
             </div>
-            <p className="text-3xl font-bold dark:text-white light:text-gray-900">{data.summary.institutions}</p>
+
+            <p className="text-3xl font-bold dark:text-white light:text-gray-900">
+              {isLoading ? "-" : uniqueInstitutions}
+            </p>
             <p className="text-sm dark:text-gray-400 light:text-gray-600 mt-2">
-              {data.summary.accounts} contas conectadas
+              {isLoading ? "..." : `${totalAccounts} contas conectadas`}
             </p>
           </Card>
 
@@ -711,6 +755,7 @@ export default function Dashboard() {
               <h3 className="text-lg font-bold dark:text-white light:text-gray-900">Instituições Conectadas</h3>
             </div>
             <Button
+              onClick={() => setIsConnectModalOpen(true)}
               className="bg-[#FFC107] text-black hover:bg-[#FFB800] font-semibold flex items-center gap-2"
               size="sm"
             >
@@ -720,27 +765,56 @@ export default function Dashboard() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {data.institutions.map((institution) => (
-              <div key={institution.id} className="p-4 border dark:border-gray-700 light:border-gray-300 rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold dark:text-white light:text-gray-900">{institution.name}</h4>
-                  <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                    Conectada
-                  </span>
+            {isLoading ? (
+              <p className="text-gray-500">Carregando contas...</p>
+            ) : accounts.length === 0 ? (
+              <p className="text-gray-500 col-span-3 text-center py-4">
+                Nenhuma conta conectada. Clique no botão acima para conectar.
+              </p>
+            ) : (
+              // Lógica de Agrupamento
+              Object.entries(
+                accounts.reduce((acc: any, account: any) => {
+                  const key = account.institution;
+                  if (!acc[key]) {
+                    acc[key] = [];
+                  }
+                  acc[key].push(account);
+                  return acc;
+                }, {})
+              ).map(([institutionName, institutionAccounts]: [string, any]) => (
+                
+                // Renderiza UM card por INSTITUIÇÃO
+                <div key={institutionName} className="p-4 border dark:border-gray-700 light:border-gray-300 rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold dark:text-white light:text-gray-900">{institutionName}</h4>
+                    <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                      Conectada
+                    </span>
+                  </div>
+                  
+                  {/* Lista todas as contas daquela instituição */}
+                  <div className="space-y-4"> 
+                    {institutionAccounts.map((acc: any, idx: number) => (
+                      <div key={`${acc.localId}-${idx}`} className="text-sm border-t pt-2 first:border-0 first:pt-0 border-gray-700">
+                        <div className="flex justify-between items-center">
+                          <p className="dark:text-gray-300 light:text-gray-700 capitalize">
+                            {acc.type === 'checking' ? 'Conta Corrente' : acc.type}
+                          </p>
+                          {/* Etiqueta com o ID da conta */}
+                          <span className="text-xs font-mono bg-gray-700 text-gray-300 px-2 py-0.5 rounded opacity-70">
+                            {acc.ifAccountId}
+                          </span>
+                        </div>
+                        <p className="text-[#FFC107] font-bold">
+                          {formatCurrency(acc.balance)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-sm dark:text-gray-400 light:text-gray-600 mb-3">
-                  {institution.accounts.length} conta{institution.accounts.length !== 1 ? "s" : ""}
-                </p>
-                <div className="space-y-2">
-                  {institution.accounts.map((account) => (
-                    <div key={account.id} className="text-sm">
-                      <p className="dark:text-gray-300 light:text-gray-700">{account.name}</p>
-                      <p className="text-[#FFC107]">{formatCurrency(account.balance)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </Card>
 
@@ -913,6 +987,13 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+      {/* Modal de Conexão Bancária */}
+      <ConnectBankModal 
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+        onSuccess={fetchDashboardData}
+        connectedAccounts={accounts}
+      />
     </div>
   )
 }
