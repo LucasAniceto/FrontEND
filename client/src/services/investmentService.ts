@@ -196,4 +196,13 @@ export const investmentService = {
     })
   },
 
+  /**
+   * Obter extrato (transações) de uma conta conectada
+   */
+  async getAccountTransactions(localAccountId: string): Promise<any[]> {
+    return await apiClient.fetch<any[]>(`/integration/dashboard/accounts/${localAccountId}/transactions`, {
+      method: 'GET',
+    })
+  },
+
 }
