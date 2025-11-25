@@ -27,6 +27,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { investmentService } from "@/services/investmentService"
 import type { Account } from "@/types/dashboard"
 import { ConnectBankModal } from "@/components/ConnectBankModal"
+import { TransactionsModal } from "@/components/TransactionsModal"
 
 // Dados mockados - substitua por chamada à API depois
 const MOCK_DASHBOARD_DATA: DashboardData = {
@@ -477,6 +478,8 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [totalBalance, setTotalBalance] = useState(0)
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false)
+  const [isTransactionsModalOpen, setIsTransactionsModalOpen] = useState(false)
+  const [selectedAccountForExtract, setSelectedAccountForExtract] = useState<any>(null)
 
 
   // Função reutilizável para buscar dados
@@ -809,6 +812,20 @@ export default function Dashboard() {
                         <p className="text-[#FFC107] font-bold">
                           {formatCurrency(acc.balance)}
                         </p>
+                        {/* BOTÃO DE EXTRATO NOVO */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-gray-400 hover:text-white hover:bg-gray-700"
+                          onClick={() => {
+                            setSelectedAccountForExtract(acc)
+                            setIsTransactionsModalOpen(true)
+                          }}
+                          title="Ver Extrato"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          <span className="text-xs">Extrato</span>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -993,6 +1010,13 @@ export default function Dashboard() {
         onClose={() => setIsConnectModalOpen(false)}
         onSuccess={fetchDashboardData}
         connectedAccounts={accounts}
+      />
+
+      {/* Modal de Transações */}
+      <TransactionsModal 
+        isOpen={isTransactionsModalOpen}
+        onClose={() => setIsTransactionsModalOpen(false)}
+        account={selectedAccountForExtract}
       />
     </div>
   )
