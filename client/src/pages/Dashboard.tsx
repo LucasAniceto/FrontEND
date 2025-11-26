@@ -492,6 +492,7 @@ export default function Dashboard() {
   const [selectedAccountForExtract, setSelectedAccountForExtract] = useState<any>(null)
   const [totalInvestments, setTotalInvestments] = useState(0)
   const [realInvestments, setRealInvestments] = useState<any[]>([])
+  const [marketProducts, setMarketProducts] = useState<any[]>([])
 
   // Função reutilizável para buscar dados
   const fetchDashboardData = async () => {
@@ -508,6 +509,9 @@ export default function Dashboard() {
       
       setTotalInvestments(investmentsResponse.total_items || 0)
       setRealInvestments(investmentsResponse.investments || [])
+
+      const productsData = await investmentService.getMarketProducts()
+      setMarketProducts(productsData || [])
 
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error)
@@ -1003,7 +1007,7 @@ export default function Dashboard() {
         <MigrationSimulator />
 
         {/* Comparativa de Produtos */}
-        {data.marketProducts && <ProductComparison products={data.marketProducts} />}
+        {data.marketProducts && <ProductComparison products={marketProducts} />}
 
         {/* Relatórios e Projeções */}
         <ReportsPanel

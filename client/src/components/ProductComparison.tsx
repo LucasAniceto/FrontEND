@@ -9,60 +9,81 @@ interface ProductComparisonProps {
 }
 
 export function ProductComparison({ products }: ProductComparisonProps) {
-  const [selectedType, setSelectedType] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<"return" | "liquidity" | "rating">("return")
+  // 1. Inicialize com "todos" para bater com a lógica do filtro
 
-  if (!products || products.length === 0) {
+  console.log("Produtos recebidos no componente:", products);
+
+  const [selectedType, setSelectedType] = useState<string>("todos")
+  const [sortBy, setSortBy] = useState<"return" | "rating" | "liquidity">("return")
+
+  if (!products) {
     return null
   }
 
-  const filteredProducts =
-    selectedType === "all" ? products : products.filter((p) => p.type === selectedType)
+  // 2. Lógica de Filtro
+  const filteredProducts = products.filter((product) => {
+    if (selectedType === "todos") return true
+    
+    const type = product.type ? product.type.toLowerCase() : ''
+    
+    if (selectedType === "acoes") return type === "stock" || type === "acao"
+    if (selectedType === "fis") return type === "fii"
+    if (selectedType === "fundos") return type === "funds" || type === "fundo"
+    if (selectedType === "tesouro") return type === "treasury" || type === "tesouro"
+    if (selectedType === "cripto") return type === "crypto" || type === "cripto"
+    
+    // Para 'cdb' e outros que batem direto
+    return type === selectedType
+  })
 
+  // 3. Lógica de Ordenação
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortBy === "return") {
-      return b.returnValue - a.returnValue
+      return (Number(b.returnValue) || 0) - (Number(a.returnValue) || 0)
     } else if (sortBy === "rating") {
-      return b.rating - a.rating
+      return (Number(b.rating) || 0) - (Number(a.rating) || 0)
+    } else if (sortBy === "liquidity") {
+       return (a.liquidity || "").localeCompare(b.liquidity || "")
     }
     return 0
   })
 
-  const types = ["all", ...new Set(products.map((p) => p.type))]
+  // 4. Listas e Helpers
+  const types = ["todos", "cdb", "tesouro", "fundos", "fis", "acoes", "cripto"]
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      all: "Todos",
+      todos: "Todos",
       cdb: "CDB",
       tesouro: "Tesouro Direto",
-      fundo: "Fundos",
-      acao: "Ações",
-      fii: "FIIs",
+      fundos: "Fundos",
+      acoes: "Ações",
+      fis: "FIIs",
+      cripto: "Cripto"
     }
     return labels[type] || type
   }
 
   const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case "baixo":
-        return "bg-green-500/20 text-green-400 border-green-500/30"
-      case "médio":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      case "alto":
-        return "bg-red-500/20 text-red-400 border-red-500/30"
-      default:
-        return ""
-    }
+    const r = risk ? risk.toLowerCase() : ''
+    if (r === 'baixo') return 'bg-green-500/20 text-green-400 border-green-500/30'
+    if (r === 'médio' || r === 'medio') return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+    return 'bg-red-500/20 text-red-400 border-red-500/30'
   }
 
   const getLiquidityLabel = (liquidity: string) => {
+    if (!liquidity) return 'N/A';
+    
     const labels: Record<string, string> = {
-      diária: "Saque Diário",
-      "30-dias": "30 Dias",
-      "90-dias": "90 Dias",
-      "longo-prazo": "Longo Prazo",
+      'diária': 'Diária',
+      'imediata': 'Imediata',
+      'no maturity': 'No Vencimento', 
+      'no vencimento': 'No Vencimento',
+      'd+0': 'D+0 (Imediata)',
+      'd+1': 'D+1'
     }
-    return labels[liquidity] || liquidity
+    
+    return labels[liquidity.toLowerCase()] || liquidity
   }
 
   const formatCurrency = (value: number) => {
@@ -72,8 +93,10 @@ export function ProductComparison({ products }: ProductComparisonProps) {
     }).format(value)
   }
 
+  // 5. O HTML (JSX) - Isto é o que exibe o card na tela
   return (
     <Card className="p-6 border-2 border-gray-700 light:border-gray-300 bg-gray-800 light:bg-gray-50 mb-8">
+      {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Download className="w-5 h-5 text-[#FFC107]" />
@@ -120,16 +143,19 @@ export function ProductComparison({ products }: ProductComparisonProps) {
 
       {/* Grid de Produtos */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sortedProducts.slice(0, 9).map((product) => (
+        {sortedProducts.length > 0 ? (
+           sortedProducts.slice(0, 9).map((product) => (
           <div
             key={product.id}
             className="p-4 border-2 border-gray-700 light:border-gray-300 rounded-lg bg-gray-900/50 light:bg-white hover:border-[#FFC107]/50 transition flex flex-col"
           >
-            {/* Header */}
+            {/* Header do Card */}
             <div className="mb-3">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h4 className="font-bold text-white light:text-gray-900 text-sm">{product.name}</h4>
+                  <h4 className="font-bold text-white light:text-gray-900 text-sm line-clamp-1" title={product.name}>
+                     {product.name}
+                  </h4>
                   <p className="text-xs text-gray-400 light:text-gray-600">{product.institution}</p>
                 </div>
                 <div className="flex gap-0.5">
@@ -137,7 +163,7 @@ export function ProductComparison({ products }: ProductComparisonProps) {
                     <Star
                       key={i}
                       className={`w-3 h-3 ${
-                        i < Math.floor(product.rating)
+                        i < Math.floor(product.rating || 4)
                           ? "fill-[#FFC107] text-[#FFC107]"
                           : "text-gray-600"
                       }`}
@@ -175,11 +201,7 @@ export function ProductComparison({ products }: ProductComparisonProps) {
                     product.riskLevel
                   )}`}
                 >
-                  {product.riskLevel === "baixo"
-                    ? "Baixo"
-                    : product.riskLevel === "médio"
-                      ? "Médio"
-                      : "Alto"}
+                  {(product.riskLevel || 'médio').toUpperCase()}
                 </span>
               </div>
             </div>
@@ -194,7 +216,12 @@ export function ProductComparison({ products }: ProductComparisonProps) {
               </Button>
             </div>
           </div>
-        ))}
+        ))
+       ) : (
+          <div className="col-span-3 text-center py-10 text-gray-500">
+            Nenhum produto encontrado.
+          </div>
+       )}
       </div>
 
       {sortedProducts.length > 9 && (

@@ -210,5 +210,11 @@ export const investmentService = {
         method: 'GET',
       }
     )
+  },
+  
+  async getMarketProducts(): Promise<any[]> {
+    return await apiClient.fetch<any[]>('/integration/market/products', {
+      method: 'GET',
+    })
   }
 }
