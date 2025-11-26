@@ -469,6 +469,16 @@ const MOCK_DASHBOARD_DATA: DashboardData = {
   ],
 }
 
+const CATEGORY_CONFIG: Record<string, { name: string; color: string }> = {
+  STOCK: { name: "Ações", color: "bg-blue-500" },
+  CDB: { name: "Renda Fixa (CDB)", color: "bg-green-500" },
+  FII: { name: "Fundos Imobiliários", color: "bg-purple-500" },
+  CRYPTO: { name: "Criptomoedas", color: "bg-red-500" },
+  TREASURY: { name: "Tesouro Direto", color: "bg-orange-500" },
+  FUNDS: { name: "Fundos de Investimento", color: "bg-yellow-500" },
+  OUTROS: { name: "Outros", color: "bg-gray-500" },
+}
+
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth()
   const [, setLocation] = useLocation()
@@ -505,12 +515,37 @@ export default function Dashboard() {
       setIsLoading(false)
     }
   }
-
+  
   useEffect(() => {
     if (isAuthenticated) {
       fetchDashboardData()
     }
   }, [isAuthenticated])
+
+  const totalInvestedValue = realInvestments.reduce((acc, inv) => acc + (Number(inv.investedAmount) || 0), 0)
+
+  // 2. Agrupa e soma por tipo (Tipagem Forçada no Reduce)
+  const investmentsByType = realInvestments.reduce<Record<string, number>>((acc, inv) => {
+    const type = inv.type || 'OUTROS'
+    acc[type] = (acc[type] || 0) + (Number(inv.investedAmount) || 0)
+    return acc
+  }, {})
+
+  // 3. Transforma e Ordena (Com tipagem explícita no valor)
+  const categoryData = Object.entries(investmentsByType)
+    .map(([type, val]) => {
+      const value = val as number // <--- Resolve o "unknown" aqui
+      const config = CATEGORY_CONFIG[type] || CATEGORY_CONFIG['OUTROS']
+      
+      return {
+        type,
+        name: config.name,
+        value: value,
+        percentage: totalInvestedValue > 0 ? (value / totalInvestedValue) * 100 : 0,
+        color: config.color
+      }
+    })
+    .sort((a, b) => b.value - a.value)
 
   // Redirecionar se não estiver autenticado
   if (!isAuthenticated) {
@@ -671,7 +706,7 @@ export default function Dashboard() {
 
         {/* Gráficos */}
         <div className="grid md:grid-cols-2 gap-8 mb-8">
-          {/* Distribuição por Tipo */}
+          {/* Distribuição por Tipo (Agora Dinâmico) */}
           <Card className="p-6 border-2 dark:border-gray-700 light:border-gray-300 dark:bg-gray-800 light:bg-gray-50">
             <div className="flex items-center gap-2 mb-6">
               <PieChart className="w-5 h-5 text-[#FFC107]" />
@@ -679,27 +714,44 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              {data.categories.map((category) => (
-                <div key={category.type}>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">
-                      {category.name}
-                    </span>
-                    <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                      {formatNumber(category.percentage)}%
-                    </span>
-                  </div>
-                  <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`${category.color} rounded-full h-2`}
-                      style={{ width: `${category.percentage}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs dark:text-gray-400 light:text-gray-600 mt-1">
-                    {formatCurrency(category.value)}
-                  </p>
+              {/* Estado de Carregamento */}
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-2">
+                  <div className="w-6 h-6 border-2 border-[#FFC107] border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-sm text-gray-500">Calculando...</p>
                 </div>
-              ))}
+              ) : categoryData.length > 0 ? (
+                /* Lista de Categorias Reais */
+                categoryData.map((category) => (
+                  <div key={category.type}>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">
+                        {category.name}
+                      </span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(category.percentage, 1)}%
+                      </span>
+                    </div>
+                    
+                    {/* Barra de Progresso Colorida */}
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`${category.color} h-2 transition-all duration-500 ease-out`}
+                        style={{ width: `${category.percentage}%` }}
+                      ></div>
+                    </div>
+                    
+                    <p className="text-xs dark:text-gray-400 light:text-gray-600 mt-1">
+                      {formatCurrency(category.value)}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <PieChart className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Nenhum investimento para exibir.</p>
+                </div>
+              )}
             </div>
           </Card>
 
