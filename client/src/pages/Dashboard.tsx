@@ -531,6 +531,27 @@ export default function Dashboard() {
     return acc
   }, {})
 
+  const riskValues = realInvestments.reduce((acc, inv) => {
+    const value = Number(inv.investedAmount) || 0
+    const type = inv.type ? inv.type.toUpperCase() : 'OUTROS'
+
+    if (['CDB', 'TREASURY', 'POUPANCA', 'LCI', 'LCA'].includes(type)) {
+      acc.conservative += value
+    } else if (['STOCK', 'CRYPTO'].includes(type)) {
+      acc.aggressive += value
+    } else {
+      acc.moderate += value
+    }
+
+    return acc
+  }, { conservative: 0, moderate: 0, aggressive: 0 })
+
+  const riskProfile = {
+    conservative: totalInvestedValue > 0 ? (riskValues.conservative / totalInvestedValue) * 100 : 0,
+    moderate: totalInvestedValue > 0 ? (riskValues.moderate / totalInvestedValue) * 100 : 0,
+    aggressive: totalInvestedValue > 0 ? (riskValues.aggressive / totalInvestedValue) * 100 : 0,
+  }
+
   // 3. Transforma e Ordena (Com tipagem explícita no valor)
   const categoryData = Object.entries(investmentsByType)
     .map(([type, val]) => {
@@ -755,7 +776,7 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          {/* Perfil de Risco */}
+          {/* Perfil de Risco (Dinâmico) */}
           <Card className="p-6 border-2 dark:border-gray-700 light:border-gray-300 dark:bg-gray-800 light:bg-gray-50">
             <div className="flex items-center gap-2 mb-6">
               <BarChart3 className="w-5 h-5 text-[#FFC107]" />
@@ -763,50 +784,59 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Conservador</span>
-                  <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                    {formatNumber(data.riskProfile.conservative)}%
-                  </span>
-                </div>
-                <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-green-500 rounded-full h-3"
-                    style={{ width: `${data.riskProfile.conservative}%` }}
-                  ></div>
-                </div>
-              </div>
+              {isLoading ? (
+                 <p className="text-center text-gray-500 py-4">Calculando riscos...</p>
+              ) : (
+                <>
+                  {/* Conservador */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Conservador</span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(riskProfile.conservative, 1)}%
+                      </span>
+                    </div>
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-green-500 rounded-full h-3 transition-all duration-500"
+                        style={{ width: `${riskProfile.conservative}%` }}
+                      ></div>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Moderado</span>
-                  <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                    {formatNumber(data.riskProfile.moderate)}%
-                  </span>
-                </div>
-                <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-yellow-500 rounded-full h-3"
-                    style={{ width: `${data.riskProfile.moderate}%` }}
-                  ></div>
-                </div>
-              </div>
+                  {/* Moderado */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Moderado</span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(riskProfile.moderate, 1)}%
+                      </span>
+                    </div>
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-yellow-500 rounded-full h-3 transition-all duration-500"
+                        style={{ width: `${riskProfile.moderate}%` }}
+                      ></div>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Agressivo</span>
-                  <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                    {formatNumber(data.riskProfile.aggressive)}%
-                  </span>
-                </div>
-                <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-red-500 rounded-full h-3"
-                    style={{ width: `${data.riskProfile.aggressive}%` }}
-                  ></div>
-                </div>
-              </div>
+                  {/* Agressivo */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Agressivo</span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(riskProfile.aggressive, 1)}%
+                      </span>
+                    </div>
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-red-500 rounded-full h-3 transition-all duration-500"
+                        style={{ width: `${riskProfile.aggressive}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </Card>
         </div>
