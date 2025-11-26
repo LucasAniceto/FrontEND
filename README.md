@@ -74,5 +74,3 @@ investic-frontend/
 ├── shared/
 └── package.json
 ```
-
-## 🌟 Desenvolvido com Manus AI
