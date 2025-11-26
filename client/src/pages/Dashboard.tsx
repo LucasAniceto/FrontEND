@@ -480,21 +480,23 @@ export default function Dashboard() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false)
   const [isTransactionsModalOpen, setIsTransactionsModalOpen] = useState(false)
   const [selectedAccountForExtract, setSelectedAccountForExtract] = useState<any>(null)
-
+  const [totalInvestments, setTotalInvestments] = useState(0)
 
   // Função reutilizável para buscar dados
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true)
       
-      // Chama o serviço
       const accountsData = await investmentService.getDashboardAccounts()
-      
-      // Calcula o total
       const total = accountsData.reduce((acc: number, curr: any) => acc + Number(curr.balance), 0)
       
       setAccounts(accountsData)
       setTotalBalance(total)
+
+      const investmentsResponse = await investmentService.getAllInvestments()
+      
+      setTotalInvestments(investmentsResponse.total_items || 0)
+
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error)
     } finally {
@@ -655,7 +657,12 @@ export default function Dashboard() {
               <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Investimentos</span>
               <Briefcase className="w-5 h-5 text-purple-400" />
             </div>
-            <p className="text-3xl font-bold dark:text-white light:text-gray-900">{data.summary.investments}</p>
+            
+            {/* AQUI ESTÁ A MUDANÇA: */}
+            <p className="text-3xl font-bold dark:text-white light:text-gray-900">
+              {isLoading ? "-" : totalInvestments}
+            </p>
+            
             <p className="text-sm dark:text-gray-400 light:text-gray-600 mt-2">ativos diferentes</p>
           </Card>
         </div>

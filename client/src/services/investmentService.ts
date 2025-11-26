@@ -205,4 +205,10 @@ export const investmentService = {
     })
   },
 
+  async getAllInvestments(): Promise<any> { 
+    return await apiClient.fetch<any>('/integration/dashboard/investments',{
+        method: 'GET',
+      }
+    )
+  }
 }
