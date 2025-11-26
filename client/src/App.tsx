@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Contact from "./pages/Contact";
 import Learning from "./pages/Learning";
 import Dashboard from "./pages/Dashboard";
+import Simulator from "./pages/Simulator";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path={"/contato"} component={Contact} />
       <Route path={"/aprendizado"} component={Learning} />
       <Route path={"/dashboard"} component={Dashboard} />
+      <Route path={"/simulador"} component={Simulator} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
