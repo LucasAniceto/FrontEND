@@ -481,6 +481,7 @@ export default function Dashboard() {
   const [isTransactionsModalOpen, setIsTransactionsModalOpen] = useState(false)
   const [selectedAccountForExtract, setSelectedAccountForExtract] = useState<any>(null)
   const [totalInvestments, setTotalInvestments] = useState(0)
+  const [realInvestments, setRealInvestments] = useState<any[]>([])
 
   // Função reutilizável para buscar dados
   const fetchDashboardData = async () => {
@@ -496,6 +497,7 @@ export default function Dashboard() {
       const investmentsResponse = await investmentService.getAllInvestments()
       
       setTotalInvestments(investmentsResponse.total_items || 0)
+      setRealInvestments(investmentsResponse.investments || [])
 
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error)
@@ -853,65 +855,57 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b dark:border-gray-700 light:border-gray-300">
-                  <th className="text-left py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">Nome</th>
+                  <th className="text-left py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">Nome / Tipo</th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">Qtd</th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">
-                    Preço Unit.
+                    Valor Investido
                   </th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">
-                    Valor Total
+                    Instituição
                   </th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">
-                    Lucro/Prejuízo
+                    Data Compra
                   </th>
-                  <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">%</th>
                 </tr>
               </thead>
               <tbody>
-                {data.investments.map((investment) => (
-                  <tr
-                    key={investment.id}
-                    className="border-b dark:border-gray-700 light:border-gray-300 dark:hover:bg-gray-700/50 light:hover:bg-gray-100 cursor-pointer transition"
-                    onClick={() => setSelectedInvestment(investment)}
-                  >
-                    <td className="py-3 px-4 dark:text-white light:text-gray-900">{investment.name}</td>
-                    <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700">
-                      {formatNumber(investment.quantity, 4)}
-                    </td>
-                    <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700">
-                      {formatCurrency(investment.currentPrice)}
-                    </td>
-                    <td className="text-right py-3 px-4 dark:text-white light:text-gray-900 font-semibold">
-                      {formatCurrency(investment.currentValue)}
-                    </td>
-                    <td
-                      className={`text-right py-3 px-4 font-semibold ${
-                        investment.profitLoss >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
+                {realInvestments.length > 0 ? (
+                  realInvestments.map((investment) => (
+                    <tr
+                      key={investment._id}
+                      className="border-b dark:border-gray-700 light:border-gray-300 dark:hover:bg-gray-700/50 light:hover:bg-gray-100 cursor-pointer transition"
                     >
-                      <div className="flex items-center justify-end gap-1">
-                        {investment.profitLoss >= 0 ? (
-                          <ArrowUpRight className="w-4 h-4" />
-                        ) : (
-                          <ArrowDownLeft className="w-4 h-4" />
-                        )}
-                        {formatCurrency(investment.profitLoss)}
-                      </div>
-                    </td>
-                    <td
-                      className={`text-right py-3 px-4 font-semibold ${
-                        investment.profitLossPercentage >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {investment.profitLossPercentage > 0 ? "+" : ""}
-                      {formatNumber(investment.profitLossPercentage)}%
+                      <td className="py-3 px-4 dark:text-white light:text-gray-900">
+                        <div className="font-medium">{investment.name}</div>
+                        <div className="text-xs text-gray-500 uppercase">{investment.type}</div>
+                      </td>
+                      
+                      <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700">
+                        {formatNumber(investment.quantity, 2)}
+                      </td>
+                      
+                      <td className="text-right py-3 px-4 dark:text-white light:text-gray-900 font-semibold">
+                        {formatCurrency(investment.investedAmount)}
+                      </td>
+                      
+                      <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700 text-xs">
+                         <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            {investment.source_institution}
+                         </span>
+                      </td>
+
+                      <td className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600">
+                        {new Date(investment.purchaseDate).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
+                      {isLoading ? "Carregando carteira..." : "Nenhum investimento encontrado."}
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
