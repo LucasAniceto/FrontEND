@@ -493,6 +493,7 @@ export default function Dashboard() {
   const [totalInvestments, setTotalInvestments] = useState(0)
   const [realInvestments, setRealInvestments] = useState<any[]>([])
   const [marketProducts, setMarketProducts] = useState<any[]>([])
+  const [profitSummary, setProfitSummary] = useState({ value: 0, percentage: 0 })
 
   // Função reutilizável para buscar dados
   const fetchDashboardData = async () => {
@@ -509,6 +510,13 @@ export default function Dashboard() {
       
       setTotalInvestments(investmentsResponse.total_items || 0)
       setRealInvestments(investmentsResponse.investments || [])
+
+      if (investmentsResponse.summary) {
+        setProfitSummary({
+          value: investmentsResponse.summary.total_profit,
+          percentage: investmentsResponse.summary.total_profit_percent
+        })
+      }
 
       const productsData = await investmentService.getMarketProducts()
       setMarketProducts(productsData || [])
@@ -665,36 +673,38 @@ export default function Dashboard() {
           </p>
           </Card>
 
-          {/* Lucro/Prejuízo */}
+          {/* Lucro/Prejuízo (Integrado) */}
           <Card
             className={`p-6 border-2 ${
-              data.summary.totalProfitLoss >= 0
+              profitSummary.value >= 0
                 ? "border-green-500/20 dark:bg-green-900/10 light:bg-green-50/50"
                 : "border-red-500/20 dark:bg-red-900/10 light:bg-red-50/50"
             }`}
           >
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Lucro/Prejuízo</span>
-              {data.summary.totalProfitLoss >= 0 ? (
+              <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Lucro Estimado</span>
+              {profitSummary.value >= 0 ? (
                 <TrendingUp className="w-5 h-5 text-green-400" />
               ) : (
                 <TrendingDown className="w-5 h-5 text-red-400" />
               )}
             </div>
+            
             <p
               className={`text-3xl font-bold ${
-                data.summary.totalProfitLoss >= 0 ? "text-green-400" : "text-red-400"
+                profitSummary.value >= 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {formatCurrency(data.summary.totalProfitLoss)}
+              {isLoading ? "..." : formatCurrency(profitSummary.value)}
             </p>
+            
             <p
               className={`text-sm mt-2 ${
-                data.summary.totalProfitLoss >= 0 ? "text-green-400" : "text-red-400"
+                profitSummary.value >= 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {data.summary.totalProfitLossPercentage > 0 ? "+" : ""}
-              {formatNumber(data.summary.totalProfitLossPercentage)}%
+              {profitSummary.value > 0 ? "+" : ""}
+              {isLoading ? "-" : formatNumber(profitSummary.percentage)}%
             </p>
           </Card>
 

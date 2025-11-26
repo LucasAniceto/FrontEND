@@ -11,8 +11,6 @@ interface ProductComparisonProps {
 export function ProductComparison({ products }: ProductComparisonProps) {
   // 1. Inicialize com "todos" para bater com a lógica do filtro
 
-  console.log("Produtos recebidos no componente:", products);
-
   const [selectedType, setSelectedType] = useState<string>("todos")
   const [sortBy, setSortBy] = useState<"return" | "rating" | "liquidity">("return")
 
