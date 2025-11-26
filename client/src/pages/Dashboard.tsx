@@ -469,6 +469,16 @@ const MOCK_DASHBOARD_DATA: DashboardData = {
   ],
 }
 
+const CATEGORY_CONFIG: Record<string, { name: string; color: string }> = {
+  STOCK: { name: "Ações", color: "bg-blue-500" },
+  CDB: { name: "Renda Fixa (CDB)", color: "bg-green-500" },
+  FII: { name: "Fundos Imobiliários", color: "bg-purple-500" },
+  CRYPTO: { name: "Criptomoedas", color: "bg-red-500" },
+  TREASURY: { name: "Tesouro Direto", color: "bg-orange-500" },
+  FUNDS: { name: "Fundos de Investimento", color: "bg-yellow-500" },
+  OUTROS: { name: "Outros", color: "bg-gray-500" },
+}
+
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth()
   const [, setLocation] = useLocation()
@@ -480,33 +490,95 @@ export default function Dashboard() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false)
   const [isTransactionsModalOpen, setIsTransactionsModalOpen] = useState(false)
   const [selectedAccountForExtract, setSelectedAccountForExtract] = useState<any>(null)
-
+  const [totalInvestments, setTotalInvestments] = useState(0)
+  const [realInvestments, setRealInvestments] = useState<any[]>([])
+  const [marketProducts, setMarketProducts] = useState<any[]>([])
+  const [profitSummary, setProfitSummary] = useState({ value: 0, percentage: 0 })
 
   // Função reutilizável para buscar dados
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true)
       
-      // Chama o serviço
       const accountsData = await investmentService.getDashboardAccounts()
-      
-      // Calcula o total
       const total = accountsData.reduce((acc: number, curr: any) => acc + Number(curr.balance), 0)
       
       setAccounts(accountsData)
       setTotalBalance(total)
+
+      const investmentsResponse = await investmentService.getAllInvestments()
+      
+      setTotalInvestments(investmentsResponse.total_items || 0)
+      setRealInvestments(investmentsResponse.investments || [])
+
+      if (investmentsResponse.summary) {
+        setProfitSummary({
+          value: investmentsResponse.summary.total_profit,
+          percentage: investmentsResponse.summary.total_profit_percent
+        })
+      }
+
+      const productsData = await investmentService.getMarketProducts()
+      setMarketProducts(productsData || [])
+
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error)
     } finally {
       setIsLoading(false)
     }
   }
-
+  
   useEffect(() => {
     if (isAuthenticated) {
       fetchDashboardData()
     }
   }, [isAuthenticated])
+
+  const totalInvestedValue = realInvestments.reduce((acc, inv) => acc + (Number(inv.investedAmount) || 0), 0)
+
+  // 2. Agrupa e soma por tipo (Tipagem Forçada no Reduce)
+  const investmentsByType = realInvestments.reduce<Record<string, number>>((acc, inv) => {
+    const type = inv.type || 'OUTROS'
+    acc[type] = (acc[type] || 0) + (Number(inv.investedAmount) || 0)
+    return acc
+  }, {})
+
+  const riskValues = realInvestments.reduce((acc, inv) => {
+    const value = Number(inv.investedAmount) || 0
+    const type = inv.type ? inv.type.toUpperCase() : 'OUTROS'
+
+    if (['CDB', 'TREASURY', 'POUPANCA', 'LCI', 'LCA'].includes(type)) {
+      acc.conservative += value
+    } else if (['STOCK', 'CRYPTO'].includes(type)) {
+      acc.aggressive += value
+    } else {
+      acc.moderate += value
+    }
+
+    return acc
+  }, { conservative: 0, moderate: 0, aggressive: 0 })
+
+  const riskProfile = {
+    conservative: totalInvestedValue > 0 ? (riskValues.conservative / totalInvestedValue) * 100 : 0,
+    moderate: totalInvestedValue > 0 ? (riskValues.moderate / totalInvestedValue) * 100 : 0,
+    aggressive: totalInvestedValue > 0 ? (riskValues.aggressive / totalInvestedValue) * 100 : 0,
+  }
+
+  // 3. Transforma e Ordena (Com tipagem explícita no valor)
+  const categoryData = Object.entries(investmentsByType)
+    .map(([type, val]) => {
+      const value = val as number // <--- Resolve o "unknown" aqui
+      const config = CATEGORY_CONFIG[type] || CATEGORY_CONFIG['OUTROS']
+      
+      return {
+        type,
+        name: config.name,
+        value: value,
+        percentage: totalInvestedValue > 0 ? (value / totalInvestedValue) * 100 : 0,
+        color: config.color
+      }
+    })
+    .sort((a, b) => b.value - a.value)
 
   // Redirecionar se não estiver autenticado
   if (!isAuthenticated) {
@@ -601,36 +673,38 @@ export default function Dashboard() {
           </p>
           </Card>
 
-          {/* Lucro/Prejuízo */}
+          {/* Lucro/Prejuízo (Integrado) */}
           <Card
             className={`p-6 border-2 ${
-              data.summary.totalProfitLoss >= 0
+              profitSummary.value >= 0
                 ? "border-green-500/20 dark:bg-green-900/10 light:bg-green-50/50"
                 : "border-red-500/20 dark:bg-red-900/10 light:bg-red-50/50"
             }`}
           >
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Lucro/Prejuízo</span>
-              {data.summary.totalProfitLoss >= 0 ? (
+              <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Lucro Estimado</span>
+              {profitSummary.value >= 0 ? (
                 <TrendingUp className="w-5 h-5 text-green-400" />
               ) : (
                 <TrendingDown className="w-5 h-5 text-red-400" />
               )}
             </div>
+            
             <p
               className={`text-3xl font-bold ${
-                data.summary.totalProfitLoss >= 0 ? "text-green-400" : "text-red-400"
+                profitSummary.value >= 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {formatCurrency(data.summary.totalProfitLoss)}
+              {isLoading ? "..." : formatCurrency(profitSummary.value)}
             </p>
+            
             <p
               className={`text-sm mt-2 ${
-                data.summary.totalProfitLoss >= 0 ? "text-green-400" : "text-red-400"
+                profitSummary.value >= 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {data.summary.totalProfitLossPercentage > 0 ? "+" : ""}
-              {formatNumber(data.summary.totalProfitLossPercentage)}%
+              {profitSummary.value > 0 ? "+" : ""}
+              {isLoading ? "-" : formatNumber(profitSummary.percentage)}%
             </p>
           </Card>
 
@@ -655,14 +729,19 @@ export default function Dashboard() {
               <span className="text-sm font-semibold dark:text-gray-400 light:text-gray-600">Investimentos</span>
               <Briefcase className="w-5 h-5 text-purple-400" />
             </div>
-            <p className="text-3xl font-bold dark:text-white light:text-gray-900">{data.summary.investments}</p>
+            
+            {/* AQUI ESTÁ A MUDANÇA: */}
+            <p className="text-3xl font-bold dark:text-white light:text-gray-900">
+              {isLoading ? "-" : totalInvestments}
+            </p>
+            
             <p className="text-sm dark:text-gray-400 light:text-gray-600 mt-2">ativos diferentes</p>
           </Card>
         </div>
 
         {/* Gráficos */}
         <div className="grid md:grid-cols-2 gap-8 mb-8">
-          {/* Distribuição por Tipo */}
+          {/* Distribuição por Tipo (Agora Dinâmico) */}
           <Card className="p-6 border-2 dark:border-gray-700 light:border-gray-300 dark:bg-gray-800 light:bg-gray-50">
             <div className="flex items-center gap-2 mb-6">
               <PieChart className="w-5 h-5 text-[#FFC107]" />
@@ -670,31 +749,48 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              {data.categories.map((category) => (
-                <div key={category.type}>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">
-                      {category.name}
-                    </span>
-                    <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                      {formatNumber(category.percentage)}%
-                    </span>
-                  </div>
-                  <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`${category.color} rounded-full h-2`}
-                      style={{ width: `${category.percentage}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs dark:text-gray-400 light:text-gray-600 mt-1">
-                    {formatCurrency(category.value)}
-                  </p>
+              {/* Estado de Carregamento */}
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-2">
+                  <div className="w-6 h-6 border-2 border-[#FFC107] border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-sm text-gray-500">Calculando...</p>
                 </div>
-              ))}
+              ) : categoryData.length > 0 ? (
+                /* Lista de Categorias Reais */
+                categoryData.map((category) => (
+                  <div key={category.type}>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">
+                        {category.name}
+                      </span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(category.percentage, 1)}%
+                      </span>
+                    </div>
+                    
+                    {/* Barra de Progresso Colorida */}
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`${category.color} h-2 transition-all duration-500 ease-out`}
+                        style={{ width: `${category.percentage}%` }}
+                      ></div>
+                    </div>
+                    
+                    <p className="text-xs dark:text-gray-400 light:text-gray-600 mt-1">
+                      {formatCurrency(category.value)}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <PieChart className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Nenhum investimento para exibir.</p>
+                </div>
+              )}
             </div>
           </Card>
 
-          {/* Perfil de Risco */}
+          {/* Perfil de Risco (Dinâmico) */}
           <Card className="p-6 border-2 dark:border-gray-700 light:border-gray-300 dark:bg-gray-800 light:bg-gray-50">
             <div className="flex items-center gap-2 mb-6">
               <BarChart3 className="w-5 h-5 text-[#FFC107]" />
@@ -702,50 +798,59 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Conservador</span>
-                  <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                    {formatNumber(data.riskProfile.conservative)}%
-                  </span>
-                </div>
-                <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-green-500 rounded-full h-3"
-                    style={{ width: `${data.riskProfile.conservative}%` }}
-                  ></div>
-                </div>
-              </div>
+              {isLoading ? (
+                 <p className="text-center text-gray-500 py-4">Calculando riscos...</p>
+              ) : (
+                <>
+                  {/* Conservador */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Conservador</span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(riskProfile.conservative, 1)}%
+                      </span>
+                    </div>
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-green-500 rounded-full h-3 transition-all duration-500"
+                        style={{ width: `${riskProfile.conservative}%` }}
+                      ></div>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Moderado</span>
-                  <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                    {formatNumber(data.riskProfile.moderate)}%
-                  </span>
-                </div>
-                <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-yellow-500 rounded-full h-3"
-                    style={{ width: `${data.riskProfile.moderate}%` }}
-                  ></div>
-                </div>
-              </div>
+                  {/* Moderado */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Moderado</span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(riskProfile.moderate, 1)}%
+                      </span>
+                    </div>
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-yellow-500 rounded-full h-3 transition-all duration-500"
+                        style={{ width: `${riskProfile.moderate}%` }}
+                      ></div>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Agressivo</span>
-                  <span className="text-sm font-bold dark:text-white light:text-gray-900">
-                    {formatNumber(data.riskProfile.aggressive)}%
-                  </span>
-                </div>
-                <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-red-500 rounded-full h-3"
-                    style={{ width: `${data.riskProfile.aggressive}%` }}
-                  ></div>
-                </div>
-              </div>
+                  {/* Agressivo */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold dark:text-gray-300 light:text-gray-700">Agressivo</span>
+                      <span className="text-sm font-bold dark:text-white light:text-gray-900">
+                        {formatNumber(riskProfile.aggressive, 1)}%
+                      </span>
+                    </div>
+                    <div className="w-full dark:bg-gray-700 light:bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-red-500 rounded-full h-3 transition-all duration-500"
+                        style={{ width: `${riskProfile.aggressive}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </Card>
         </div>
@@ -846,65 +951,57 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b dark:border-gray-700 light:border-gray-300">
-                  <th className="text-left py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">Nome</th>
+                  <th className="text-left py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">Nome / Tipo</th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">Qtd</th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">
-                    Preço Unit.
+                    Valor Investido
                   </th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">
-                    Valor Total
+                    Instituição
                   </th>
                   <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">
-                    Lucro/Prejuízo
+                    Data Compra
                   </th>
-                  <th className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600 font-semibold">%</th>
                 </tr>
               </thead>
               <tbody>
-                {data.investments.map((investment) => (
-                  <tr
-                    key={investment.id}
-                    className="border-b dark:border-gray-700 light:border-gray-300 dark:hover:bg-gray-700/50 light:hover:bg-gray-100 cursor-pointer transition"
-                    onClick={() => setSelectedInvestment(investment)}
-                  >
-                    <td className="py-3 px-4 dark:text-white light:text-gray-900">{investment.name}</td>
-                    <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700">
-                      {formatNumber(investment.quantity, 4)}
-                    </td>
-                    <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700">
-                      {formatCurrency(investment.currentPrice)}
-                    </td>
-                    <td className="text-right py-3 px-4 dark:text-white light:text-gray-900 font-semibold">
-                      {formatCurrency(investment.currentValue)}
-                    </td>
-                    <td
-                      className={`text-right py-3 px-4 font-semibold ${
-                        investment.profitLoss >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
+                {realInvestments.length > 0 ? (
+                  realInvestments.map((investment) => (
+                    <tr
+                      key={investment._id}
+                      className="border-b dark:border-gray-700 light:border-gray-300 dark:hover:bg-gray-700/50 light:hover:bg-gray-100 cursor-pointer transition"
                     >
-                      <div className="flex items-center justify-end gap-1">
-                        {investment.profitLoss >= 0 ? (
-                          <ArrowUpRight className="w-4 h-4" />
-                        ) : (
-                          <ArrowDownLeft className="w-4 h-4" />
-                        )}
-                        {formatCurrency(investment.profitLoss)}
-                      </div>
-                    </td>
-                    <td
-                      className={`text-right py-3 px-4 font-semibold ${
-                        investment.profitLossPercentage >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {investment.profitLossPercentage > 0 ? "+" : ""}
-                      {formatNumber(investment.profitLossPercentage)}%
+                      <td className="py-3 px-4 dark:text-white light:text-gray-900">
+                        <div className="font-medium">{investment.name}</div>
+                        <div className="text-xs text-gray-500 uppercase">{investment.type}</div>
+                      </td>
+                      
+                      <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700">
+                        {formatNumber(investment.quantity, 2)}
+                      </td>
+                      
+                      <td className="text-right py-3 px-4 dark:text-white light:text-gray-900 font-semibold">
+                        {formatCurrency(investment.investedAmount)}
+                      </td>
+                      
+                      <td className="text-right py-3 px-4 dark:text-gray-300 light:text-gray-700 text-xs">
+                         <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            {investment.source_institution}
+                         </span>
+                      </td>
+
+                      <td className="text-right py-3 px-4 dark:text-gray-400 light:text-gray-600">
+                        {new Date(investment.purchaseDate).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
+                      {isLoading ? "Carregando carteira..." : "Nenhum investimento encontrado."}
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -920,7 +1017,7 @@ export default function Dashboard() {
         <MigrationSimulator />
 
         {/* Comparativa de Produtos */}
-        {data.marketProducts && <ProductComparison products={data.marketProducts} />}
+        {data.marketProducts && <ProductComparison products={marketProducts} />}
 
         {/* Relatórios e Projeções */}
         <ReportsPanel
