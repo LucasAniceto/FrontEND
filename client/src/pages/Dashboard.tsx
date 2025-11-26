@@ -12,12 +12,12 @@ import {
   EyeOff,
   PieChart,
   BarChart3,
+  ArrowRightLeft,
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useLocation } from "wouter"
 import type { DashboardData, Investment } from "@/types/dashboard"
 import { ProductComparison } from "@/components/ProductComparison"
-import { MigrationSimulator } from "@/components/MigrationSimulator"
 import { ReportsPanel } from "@/components/ReportsPanel"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { investmentService } from "@/services/investmentService"
@@ -630,6 +630,14 @@ export default function Dashboard() {
           <h1 className="dark:text-white light:text-gray-900 font-bold text-xl">Dashboard de Investimentos</h1>
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setLocation("/simulador")}
+              className="flex items-center gap-2 dark:text-gray-300 light:text-gray-700 hover:text-[#FFC107] transition font-medium"
+              title="Simulador de Migração"
+            >
+              <ArrowRightLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Simulador</span>
+            </button>
+            <button
               onClick={() => setShowValues(!showValues)}
               className="flex items-center gap-2 dark:text-gray-300 light:text-gray-700 hover:text-[#FFC107] transition"
             >
@@ -1002,9 +1010,6 @@ export default function Dashboard() {
             </table>
           </div>
         </Card>
-
-        {/* Simulador de Migração */}
-        <MigrationSimulator />
 
         {/* Comparativa de Produtos */}
         {data.marketProducts && <ProductComparison products={marketProducts} />}

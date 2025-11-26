@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, TrendingUp, BarChart3, Zap, Shield, BookOpen, LogOut, BookMarked, BarChart2 } from "lucide-react";
+import { ArrowRight, TrendingUp, BarChart3, Zap, Shield, BookOpen, LogOut, BookMarked, BarChart2, ArrowRightLeft } from "lucide-react";
 import { APP_TITLE } from "@/const";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,6 +54,13 @@ export default function Home() {
                 >
                   <BarChart2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Dashboard</span>
+                </button>
+                <button
+                  onClick={() => setLocation('/simulador')}
+                  className="flex items-center gap-2 dark:text-gray-300 light:text-gray-700 hover:text-[#FFC107] transition-colors font-medium"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Simulador</span>
                 </button>
                 <button
                   onClick={() => setLocation('/aprendizado')}
