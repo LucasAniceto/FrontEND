@@ -106,11 +106,16 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-[#FFC107] text-black hover:bg-[#FFB800] font-semibold text-base h-14">
+                <Button
+                  onClick={() => setIsLoginOpen(true)}
+                  size="lg"
+                  className="bg-[#FFC107] text-black hover:bg-[#FFB800] font-semibold text-base h-14"
+                >
                   Começar Agora
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
                 <Button
+                  onClick={scrollToFeatures}
                   size="lg"
                   variant="outline"
                   className="dark:border-2 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black light:border-2 light:border-gray-900 light:text-gray-900 light:hover:bg-gray-900 light:hover:text-white font-semibold text-base h-14"
@@ -342,6 +347,7 @@ export default function Home() {
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button
+              onClick={() => setLocation('/contato')}
               size="lg"
               variant="outline"
               className="dark:border-2 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black light:border-2 light:border-white light:text-white light:hover:bg-white light:hover:text-gray-900 font-semibold text-base h-14"
@@ -378,7 +384,7 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><a href="/" className="hover:text-[#FFC107] transition">Sobre</a></li>
                 <li><a href="/" className="hover:text-[#FFC107] transition">Blog</a></li>
-                <li><a href="#" className="hover:text-[#FFC107] transition">Contato</a></li>
+                <li><button onClick={() => setLocation('/contato')} className="hover:text-[#FFC107] transition">Contato</button></li>
               </ul>
             </div>
             <div>

@@ -10,16 +10,12 @@ import {
   Plus,
   Eye,
   EyeOff,
-  ArrowUpRight,
-  ArrowDownLeft,
   PieChart,
   BarChart3,
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useLocation } from "wouter"
 import type { DashboardData, Investment } from "@/types/dashboard"
-import { AlertsPanel } from "@/components/AlertsPanel"
-import { RecommendationsPanel } from "@/components/RecommendationsPanel"
 import { ProductComparison } from "@/components/ProductComparison"
 import { MigrationSimulator } from "@/components/MigrationSimulator"
 import { ReportsPanel } from "@/components/ReportsPanel"
@@ -1006,12 +1002,6 @@ export default function Dashboard() {
             </table>
           </div>
         </Card>
-
-        {/* Alertas e Oportunidades */}
-        {data.alerts && <AlertsPanel alerts={data.alerts} />}
-
-        {/* Recomendações Personalizadas */}
-        {data.recommendations && <RecommendationsPanel recommendations={data.recommendations} />}
 
         {/* Simulador de Migração */}
         <MigrationSimulator />
